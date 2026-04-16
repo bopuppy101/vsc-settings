@@ -4,14 +4,14 @@ import { buildSettingsTree } from './settings-schema-reader';
 export class SettingsWebviewProvider implements vscode.WebviewViewProvider {
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
-  resolveWebviewView(
+  async resolveWebviewView(
     webviewView: vscode.WebviewView,
     _context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken
-  ): void {
+  ): Promise<void> {
     webviewView.webview.options = { enableScripts: true };
     try {
-      const tree = buildSettingsTree(vscode.ConfigurationTarget.Global);
+      const tree = await buildSettingsTree(vscode.ConfigurationTarget.Global);
       webviewView.webview.html = this._getHtml(webviewView.webview, tree);
 
       // Handle messages from the webview

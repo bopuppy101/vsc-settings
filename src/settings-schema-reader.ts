@@ -41,9 +41,35 @@ interface FlatSetting {
  * Build the settings tree. Dot segments are the hierarchy — nothing else.
  * TOC provides display labels for well-known nodes.
  */
-export function buildSettingsTree(scope: vscode.ConfigurationTarget): SettingNode[] {
+export async function buildSettingsTree(scope: vscode.ConfigurationTarget): Promise<SettingNode[]> {
   const config = vscode.workspace.getConfiguration();
   const allSettings = collectAllSettings(config, scope);
+
+  // Enrich descriptions from VS Code's internal settings schema
+  try {
+    const schemaDoc = await vscode.workspace.openTextDocument(
+      vscode.Uri.parse('vscode://schemas/settings/user')
+    );
+    const schema = JSON.parse(schemaDoc.getText());
+    if (schema.properties) {
+      const descMap = new Map<string, string>();
+      for (const [key, prop] of Object.entries(schema.properties)) {
+        const p = prop as any;
+        const desc = p.markdownDescription || p.description;
+        if (desc && typeof desc === 'string') {
+          descMap.set(key, desc);
+        }
+      }
+      for (const s of allSettings) {
+        if (!s.prop.description && descMap.has(s.key)) {
+          s.prop.description = descMap.get(s.key)!;
+        }
+      }
+    }
+  } catch {
+    // Schema not available — proceed with whatever descriptions we have
+  }
+
   const tree = buildDeepTree(allSettings);
   applyTOCLabels(tree, settingsTOC);
   applyCustomCategories(tree, '');

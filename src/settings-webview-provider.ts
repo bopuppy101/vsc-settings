@@ -74,8 +74,8 @@ export class SettingsWebviewProvider implements vscode.WebviewViewProvider {
     });
   }
 
-  private _sendSettings(scope: vscode.ConfigurationTarget): void {
-    const tree = buildSettingsTree(scope);
+  private async _sendSettings(scope: vscode.ConfigurationTarget): Promise<void> {
+    const tree = await buildSettingsTree(scope);
     this._view?.webview.postMessage({
       type: 'init',
       settings: tree,
@@ -83,8 +83,8 @@ export class SettingsWebviewProvider implements vscode.WebviewViewProvider {
     });
   }
 
-  private _exportSettings(scope: vscode.ConfigurationTarget, format: string): void {
-    const tree = buildSettingsTree(scope);
+  private async _exportSettings(scope: vscode.ConfigurationTarget, format: string): Promise<void> {
+    const tree = await buildSettingsTree(scope);
     const modified: Record<string, any> = {};
 
     const collect = (nodes: SettingNode[]) => {
