@@ -73,6 +73,14 @@ export class SettingsWebviewProvider implements vscode.WebviewViewProvider {
       opacity: 0.6;
       border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border));
     }
+    .section-header {
+      padding: 12px 8px 4px 8px; font-size: 12px; font-weight: 700;
+      opacity: 0.8;
+    }
+    .separator {
+      height: 1px; margin: 8px 8px;
+      background: var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border));
+    }
   </style>
 </head>
 <body>
@@ -92,8 +100,21 @@ export class SettingsWebviewProvider implements vscode.WebviewViewProvider {
     }
     document.getElementById('stats').textContent = countAllLeaves(tree) + ' settings found';
 
-    function render(nodes, container) {
+    function render(nodes, container, isTopLevel) {
       for (const node of nodes) {
+        if (node.key === '__separator__') {
+          const sep = document.createElement('div');
+          sep.className = 'separator';
+          container.appendChild(sep);
+          continue;
+        }
+        if (node.key === '__header__') {
+          const hdr = document.createElement('div');
+          hdr.className = 'section-header';
+          hdr.textContent = node.label;
+          container.appendChild(hdr);
+          continue;
+        }
         if (node.children && node.children.length > 0) {
           const group = document.createElement('div');
           group.className = 'group collapsed';
@@ -113,7 +134,7 @@ export class SettingsWebviewProvider implements vscode.WebviewViewProvider {
 
           const kids = document.createElement('div');
           kids.className = 'children';
-          render(node.children, kids);
+          render(node.children, kids, false);
 
           group.appendChild(header);
           group.appendChild(kids);
@@ -143,7 +164,7 @@ export class SettingsWebviewProvider implements vscode.WebviewViewProvider {
       return d.innerHTML;
     }
 
-    render(tree, document.getElementById('tree'));
+    render(tree, document.getElementById('tree'), true);
   </script>
 </body>
 </html>`;
