@@ -1,0 +1,15 @@
+src/**
+scripts/**
+docs/**
+tmp/**
+node_modules/**
+*.png
+*.vsix
+*.dat
+*.zip
+*.txt
+*.md
+settings-dump.json
+tsconfig.json
+.gitignore
+.vscode/**

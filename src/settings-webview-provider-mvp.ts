@@ -122,6 +122,42 @@ export class SettingsWebviewProvider implements vscode.WebviewViewProvider {
     .search-count.hidden { display: none; }
     .hidden-by-search { display: none !important; }
 
+    /* Tooltip */
+    .tooltip {
+      position: fixed;
+      max-width: 350px;
+      padding: 8px 12px;
+      background: var(--vscode-editorHoverWidget-background, #2d2d30);
+      color: var(--vscode-editorHoverWidget-foreground, #ccc);
+      border: 1px solid var(--vscode-editorHoverWidget-border, #454545);
+      border-radius: 3px;
+      font-size: 12px;
+      line-height: 1.5;
+      z-index: 1000;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      display: none;
+    }
+    .tooltip.visible { display: block; }
+    .tooltip-key {
+      font-family: var(--vscode-editor-font-family, monospace);
+      font-size: 11px;
+      opacity: 0.6;
+      margin-bottom: 4px;
+      word-break: break-all;
+    }
+    .tooltip-desc { }
+    .tooltip-type {
+      margin-top: 4px;
+      font-size: 11px;
+      opacity: 0.5;
+    }
+    .tooltip-default {
+      margin-top: 2px;
+      font-size: 11px;
+      opacity: 0.5;
+    }
+
     /* Leaf settings */
     .setting {
       padding: 6px 8px 6px 28px;
@@ -207,6 +243,12 @@ export class SettingsWebviewProvider implements vscode.WebviewViewProvider {
     <button class="search-clear hidden" id="searchClear" title="Clear search">✕</button>
   </div>
   <div class="tree" id="tree"></div>
+  <div class="tooltip" id="tooltip">
+    <div class="tooltip-key" id="tooltipKey"></div>
+    <div class="tooltip-desc" id="tooltipDesc"></div>
+    <div class="tooltip-type" id="tooltipType"></div>
+    <div class="tooltip-default" id="tooltipDefault"></div>
+  </div>
   <script nonce="${nonce}">
     const vscodeApi = acquireVsCodeApi();
     const tree = ${treeJson};
@@ -317,7 +359,20 @@ export class SettingsWebviewProvider implements vscode.WebviewViewProvider {
 
       setting.appendChild(headerRow);
 
-      // Description
+      // Hover tooltip
+      setting.addEventListener('mouseenter', (e) => showTooltip(node, e));
+      setting.addEventListener('mousemove', (e) => {
+        if (tooltip.classList.contains('visible')) {
+          const x = Math.min(e.clientX + 12, window.innerWidth - 370);
+          const y = e.clientY + 16;
+          tooltip.style.left = Math.max(4, x) + 'px';
+          tooltip.style.top = (y + tooltip.offsetHeight > window.innerHeight
+            ? e.clientY - tooltip.offsetHeight - 8 : y) + 'px';
+        }
+      });
+      setting.addEventListener('mouseleave', hideTooltip);
+
+      // Description inline (if available)
       if (node.description) {
         const desc = document.createElement('div');
         desc.className = 'setting-description';
@@ -539,6 +594,39 @@ export class SettingsWebviewProvider implements vscode.WebviewViewProvider {
     }
 
     render(tree, document.getElementById('tree'));
+
+    // --- Tooltip ---
+    const tooltip = document.getElementById('tooltip');
+    const tooltipKey = document.getElementById('tooltipKey');
+    const tooltipDesc = document.getElementById('tooltipDesc');
+    const tooltipType = document.getElementById('tooltipType');
+    const tooltipDefault = document.getElementById('tooltipDefault');
+    let tooltipTimeout = null;
+
+    function showTooltip(node, event) {
+      clearTimeout(tooltipTimeout);
+      tooltipTimeout = setTimeout(() => {
+        tooltipKey.textContent = node.key;
+        tooltipDesc.textContent = node.description || 'No description available';
+        tooltipType.textContent = node.type ? 'Type: ' + node.type : '';
+        const defVal = node.default !== undefined ? JSON.stringify(node.default) : 'none';
+        tooltipDefault.textContent = 'Default: ' + defVal;
+
+        tooltip.classList.add('visible');
+
+        // Position near the mouse but keep on screen
+        const x = Math.min(event.clientX + 12, window.innerWidth - 370);
+        const y = event.clientY + 16;
+        tooltip.style.left = Math.max(4, x) + 'px';
+        tooltip.style.top = (y + tooltip.offsetHeight > window.innerHeight
+          ? event.clientY - tooltip.offsetHeight - 8 : y) + 'px';
+      }, 400);
+    }
+
+    function hideTooltip() {
+      clearTimeout(tooltipTimeout);
+      tooltip.classList.remove('visible');
+    }
 
     // --- Search / Filter ---
     const searchInput = document.getElementById('searchInput');
