@@ -1,3 +1,10 @@
 node_modules/
 out/
 *.png
+
+# Build/packaging dump artifacts (the committed .vsix is the real deliverable)
+settings-dump.json
+tmp/
+*.zip
+*.dat
+vsc-settings-*.txt
